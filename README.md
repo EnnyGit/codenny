@@ -9,6 +9,7 @@ ny branch   (b)  switch branch, and see where each one stands
 ny review   (r)  review a pull request in its own folder and IDE window
 ny project  (p)  open one of your projects in the IDE
 ny clean    (c)  delete local branches that are merged and gone from the server
+ny workflow (w)  how the commands fit into a normal day
 ny <command> --help
 ```
 
@@ -21,6 +22,7 @@ Needs Node 20+, git and [fzf](https://github.com/junegunn/fzf)
 git clone https://github.com/EnnyGit/codenny.git
 cd codenny
 npm install
+npm run build
 npm link
 ```
 
@@ -30,7 +32,7 @@ Add this to `~/.zshrc` (macOS) or `~/.bashrc` (Git Bash), then open a new termin
 eval "$(codenny init)"
 ```
 
-Update with `git pull && npm install`.
+Update with `git pull && npm install && npm run build`.
 
 ## Settings
 

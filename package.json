@@ -12,7 +12,6 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepare": "tsc",
     "dev": "tsc --watch",
     "test": "node --test \"dist/**/*.test.js\""
   },

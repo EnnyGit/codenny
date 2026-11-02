@@ -4,12 +4,13 @@ import { clean } from "./commands/clean.js";
 import { project } from "./commands/project.js";
 import { review } from "./commands/review.js";
 import { config as configCommand, init } from "./commands/setup.js";
+import { workflow } from "./commands/workflow.js";
 import type { Command } from "./command.js";
 import { loadConfig, type Config } from "./config.js";
 import { Fail } from "./run.js";
 import { findScripts, runScript } from "./scripts.js";
 
-const commands: Command[] = [branch, review, project, clean, configCommand, init];
+const commands: Command[] = [branch, review, project, clean, workflow, configCommand, init];
 
 function printHelp(config: Config): void {
   const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
