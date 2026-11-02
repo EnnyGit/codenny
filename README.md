@@ -70,12 +70,7 @@ The review folder, `<reviewDir>/<project>`, is a
 - It isn't on a branch itself (detached HEAD), so you can still switch to the
   pull request's branch in your own folder.
 - There's one per project, reused for every review, so you only install
-  dependencies once. `git worktree list` shows it.
-
-`ny review --done` removes the review folder of the project you're in, after
-asking about any edits you made there. Your own folder, branches, other
-worktrees and other projects' review folders stay as they are. You rarely need
-it: the next review reuses the folder anyway.
+  dependencies once. `git worktree list` shows it; `ny review --done` removes it.
 
 ## Your own scripts
 
