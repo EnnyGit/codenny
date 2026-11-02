@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { existsSync, mkdirSync, realpathSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { pickBranch } from "../branches.js";
 import type { Command } from "../command.js";
 import { openInIde } from "../ide.js";
@@ -56,6 +56,7 @@ If you edited files in the review folder, it asks before throwing them away.
       throw new Fail("not a git repo");
     }
     const dir = join(config.reviewDir, basename(common.replace(/[\\/]\.git$/, "")));
+    if (existsSync(dir)) checkIsReviewFolder(dir, common);
 
     if (args[0] === "--done") {
       if (!existsSync(dir)) return console.log(`No review folder at ${dir}`);
@@ -126,6 +127,32 @@ If you edited files in the review folder, it asks before throwing them away.
     openInIde(dir, config);
   },
 };
+
+// Refuses a folder that isn't this project's own review worktree, like the
+// project itself or an unrelated folder with the same name, so ny review
+// never resets anything but its review folder.
+function checkIsReviewFolder(dir: string, common: string): void {
+  const norm = (p: string) => {
+    const real = realpathSync.native(resolve(p));
+    return process.platform === "win32" ? real.toLowerCase() : real;
+  };
+  const same = (a: string, b: string) => norm(a) === norm(b);
+  let ok = false;
+  try {
+    const top = git(["-C", dir, "rev-parse", "--show-toplevel"]);
+    const gitDir = git(["-C", dir, "rev-parse", "--absolute-git-dir"]);
+    const itsCommon = git(["-C", dir, "rev-parse", "--path-format=absolute", "--git-common-dir"]);
+    ok = same(top, dir) && same(itsCommon, common) && !same(gitDir, common);
+  } catch {
+    // Not in a git repo at all.
+  }
+  if (!ok) {
+    throw new Fail(
+      `${dir} already exists but isn't this project's review folder, so ny review leaves it alone.\n` +
+        `Move it, or set another "reviewDir" in ny config.`,
+    );
+  }
+}
 
 // Files you changed in the review folder yourself, on top of the pull request.
 function ownEdits(dir: string): string[] {

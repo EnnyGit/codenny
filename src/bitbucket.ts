@@ -38,6 +38,10 @@ export interface BbPullRequest {
 }
 
 export async function bitbucketReviews(repo: BitbucketRepo): Promise<PullRequest[]> {
+  // Your login would go over the network unencrypted; only this machine is fine.
+  if (repo.protocol !== "https" && !/^(localhost|127\.0\.0\.1)(:|$)/.test(repo.host)) {
+    throw new Fail(`origin uses plain http, so ny won't send your login to ${repo.host}. Clone over https instead.`);
+  }
   const login = storedLogin(repo.protocol, repo.host);
   trustSystemCertificates();
   const proxy = useGitsProxy(repo.baseUrl);
@@ -48,12 +52,17 @@ export async function bitbucketReviews(repo: BitbucketRepo): Promise<PullRequest
     const url = `${repo.baseUrl}/rest/api/latest/dashboard/pull-requests?role=REVIEWER&state=OPEN&limit=100&start=${start}`;
     let res: Response;
     try {
-      res = await fetch(url, { headers: { Authorization: auth, Accept: "application/json" } });
+      // A redirect could take your login somewhere else, so don't follow one.
+      res = await fetch(url, { headers: { Authorization: auth, Accept: "application/json" }, redirect: "manual" });
     } catch (err) {
       let why = causeOf(err);
       if (proxy?.used) why += ` (through the proxy ${proxy.shown})`;
       if (proxy && !proxy.used) why += `. git uses the proxy ${proxy.shown}, but this Node version can't; update Node`;
       throw new Fail(`Can't reach ${repo.baseUrl}: ${why}`);
+    }
+    if (res.status >= 300 && res.status < 400) {
+      const to = res.headers.get("location") ?? "somewhere else";
+      throw new Fail(`Bitbucket sent ny on to ${to}; it doesn't follow redirects with your login. Check origin's URL.`);
     }
     if (res.status === 401 || res.status === 403) {
       throw new Fail(`Bitbucket didn't accept the login git stored for ${repo.host} (${res.status}).`);
