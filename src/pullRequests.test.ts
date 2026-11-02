@@ -83,3 +83,11 @@ test("GitHub: requested first, already reviewed after, no doubles", () => {
     ],
   );
 });
+
+test("server text can't send escape codes to the terminal", () => {
+  const repo = { baseUrl: "", protocol: "https", host: "", project: "SHOP", slug: "web-app" };
+  const evil = { ...bbPr(1, reviewer("enny", "UNAPPROVED")), title: "Fix\x1b]0;owned\x07 totals é → ✓" };
+  assert.equal(fromBitbucket([evil], repo, "enny")[0]?.title, "Fix]0;owned totals é → ✓");
+  assert.equal(parseBitbucketRemote("https://host/scm/A/b.git\nprotocol=https\nhost=evil"), undefined);
+  assert.equal(parseBitbucketRemote("https://ho st/scm/A/b.git"), undefined);
+});

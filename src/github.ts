@@ -1,7 +1,7 @@
 // GitHub through the gh command, which has its own login.
 import { spawnSync } from "node:child_process";
 import type { PullRequest } from "./pullRequests.js";
-import { Fail } from "./run.js";
+import { Fail, printable, program } from "./run.js";
 
 export interface GhPullRequest {
   number: number;
@@ -14,11 +14,13 @@ export interface GhPullRequest {
 
 const fields = "number,title,author,headRefName,baseRefName,isCrossRepository";
 
+const ghMissing = "Can't find gh, which ny uses for GitHub. Install it: brew install gh, then gh auth login";
+
 function gh(search: string): GhPullRequest[] {
-  const res = spawnSync("gh", ["pr", "list", "--search", search, "--json", fields, "--limit", "100"], {
+  const res = spawnSync(program("gh", ghMissing), ["pr", "list", "--search", search, "--json", fields, "--limit", "100"], {
     encoding: "utf8",
   });
-  if (res.error) throw new Fail("Can't find gh, which ny uses for GitHub. Install it: brew install gh, then gh auth login");
+  if (res.error) throw new Fail(ghMissing);
   if (res.status !== 0) throw new Fail(res.stderr.trim() || "gh pr list failed");
   return JSON.parse(res.stdout);
 }
@@ -34,10 +36,10 @@ export function toPullRequests(requested: GhPullRequest[], reviewed: GhPullReque
   const all = [...requested, ...reviewed.filter((p) => !todo.has(p.number))];
   return all.map((p) => ({
     id: p.number,
-    title: p.title,
-    author: p.author.login,
-    source: p.headRefName,
-    target: p.baseRefName,
+    title: printable(p.title),
+    author: printable(p.author.login),
+    source: printable(p.headRefName),
+    target: printable(p.baseRefName),
     status: todo.has(p.number) ? "to do" : "reviewed",
     todo: todo.has(p.number),
     fetchRef: `refs/pull/${p.number}/head`,

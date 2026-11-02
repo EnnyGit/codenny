@@ -1,7 +1,7 @@
 // The branch list behind ny branch and ny review: yours and the server's in
 // one list, newest first, with where each one stands.
 import { pick } from "./pick.js";
-import { git, gitLoud, requireRepo } from "./run.js";
+import { git, gitLoud, printable, requireRepo } from "./run.js";
 
 export interface Branch {
   name: string;
@@ -43,8 +43,9 @@ export function parseBranches(output: string): Branch[] {
         .join(", ");
       color = "33";
     }
-    const subject = r.subject.length > 60 ? r.subject.slice(0, 57) + "..." : r.subject;
-    branches.push({ name: r.name, status, color, gone: status === "gone", age: r.age, author: r.author, subject });
+    const text = printable(r.subject);
+    const subject = text.length > 60 ? text.slice(0, 57) + "..." : text;
+    branches.push({ name: r.name, status, color, gone: status === "gone", age: r.age, author: printable(r.author), subject });
   }
   return [...branches.filter((b) => !b.gone), ...branches.filter((b) => b.gone)];
 }

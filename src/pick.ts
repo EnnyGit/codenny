@@ -1,7 +1,7 @@
 // The one place that talks to fzf. Commands call pick(); swapping fzf for
 // something else later only changes this file.
 import { spawnSync } from "node:child_process";
-import { Fail } from "./run.js";
+import { Fail, program } from "./run.js";
 
 export interface PickOptions {
   prompt: string;
@@ -22,7 +22,7 @@ export function pick(lines: string[], opts: PickOptions): string | undefined {
 
   // fzf draws on the terminal itself; it reads the list from stdin and writes
   // the choice to stdout.
-  const res = spawnSync("fzf", args, {
+  const res = spawnSync(program("fzf", fzfMissing), args, {
     input: lines.join("\n"),
     encoding: "utf8",
     stdio: ["pipe", "pipe", "inherit"],

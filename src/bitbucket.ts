@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import http from "node:http";
 import tls from "node:tls";
 import type { PullRequest } from "./pullRequests.js";
-import { Fail, git } from "./run.js";
+import { Fail, git, printable, program } from "./run.js";
 
 export interface BitbucketRepo {
   baseUrl: string; // https://bitbucket.company.nl, plus a context path if the server has one
@@ -16,6 +16,8 @@ export interface BitbucketRepo {
 
 // https://[user@]host[:port][/context]/scm/PROJECT/repo.git
 export function parseBitbucketRemote(url: string): BitbucketRepo | undefined {
+  // Spaces or control characters would end up in the request for your login.
+  if (/[\x00-\x20\x7f]/.test(url)) return undefined;
   const m = /^(https?):\/\/(?:[^@/]+@)?([^/]+)(\/.*?)?\/scm\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/.exec(url);
   if (!m) return undefined;
   const [, protocol, host, context = "", project, slug] = m as unknown as string[];
@@ -90,10 +92,10 @@ export function toPullRequests(prs: BbPullRequest[], repo: BitbucketRepo, me: st
         same(p.fromRef.repository.project.key, repo.project) && same(p.fromRef.repository.slug, repo.slug);
       return {
         id: p.id,
-        title: p.title,
-        author: p.author.user.displayName,
-        source: p.fromRef.displayId,
-        target: p.toRef.displayId,
+        title: printable(p.title),
+        author: printable(p.author.user.displayName),
+        source: printable(p.fromRef.displayId),
+        target: printable(p.toRef.displayId),
         status,
         todo: status !== "approved" && status !== "changes asked",
         fetchRef: `refs/pull-requests/${p.id}/from`,
@@ -105,7 +107,7 @@ export function toPullRequests(prs: BbPullRequest[], repo: BitbucketRepo, me: st
 // The username and password (or token) git keeps for the server, from the
 // same credential helper git uses when you fetch.
 function storedLogin(protocol: string, host: string): { username: string; password: string } {
-  const res = spawnSync("git", ["credential", "fill"], {
+  const res = spawnSync(program("git"), ["credential", "fill"], {
     input: `protocol=${protocol}\nhost=${host}\n\n`,
     encoding: "utf8",
     env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },

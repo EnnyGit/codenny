@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { program } from "./run.js";
 import { cdFileVar } from "./shell.js";
 
 export interface Script {
@@ -42,7 +43,7 @@ function summaryOf(path: string): string {
 // Runs the script with bash, also on Windows (Git Bash). The script can write
 // a folder to $CODENNY_CD_FILE to move the terminal there afterwards.
 export function runScript(script: Script, args: string[]): number {
-  const res = spawnSync("bash", [script.path, ...args], {
+  const res = spawnSync(program("bash"), [script.path, ...args], {
     stdio: "inherit",
     env: { ...process.env, [cdFileVar]: process.env[cdFileVar] ?? "/dev/null" },
   });
