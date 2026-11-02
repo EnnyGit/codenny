@@ -1,0 +1,23 @@
+{
+  "name": "codenny",
+  "version": "0.1.0",
+  "description": "Everyday git shortcuts and your own scripts behind one command: ny.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "codenny": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test \"dist/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
