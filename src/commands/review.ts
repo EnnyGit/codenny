@@ -28,8 +28,8 @@ branch it goes into, like Bitbucket and GitHub show them. Pick the same pull
 request again to get its new commits.
 
 Where the pull requests come from, going by origin:
-  Bitbucket Data Center  cloned over HTTPS; uses the login git already stored
-                         for the server, nothing to set up
+  Bitbucket Data Center  cloned over HTTPS; uses the login and proxy git
+                         already uses for the server, nothing to set up
   GitHub                 through gh (gh auth login once)
   anything else          the branch list, like --branches
 

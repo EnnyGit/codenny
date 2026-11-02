@@ -1,9 +1,10 @@
 // Bitbucket Data Center (Server) over its REST API, logged in with the
 // username and password or token git already stored for the server.
 import { spawnSync } from "node:child_process";
+import http from "node:http";
 import tls from "node:tls";
 import type { PullRequest } from "./pullRequests.js";
-import { Fail } from "./run.js";
+import { Fail, git } from "./run.js";
 
 export interface BitbucketRepo {
   baseUrl: string; // https://bitbucket.company.nl, plus a context path if the server has one
@@ -39,6 +40,7 @@ export interface BbPullRequest {
 export async function bitbucketReviews(repo: BitbucketRepo): Promise<PullRequest[]> {
   const login = storedLogin(repo.protocol, repo.host);
   trustSystemCertificates();
+  const proxy = useGitsProxy(repo.baseUrl);
   const auth = "Basic " + Buffer.from(`${login.username}:${login.password}`).toString("base64");
 
   const all: BbPullRequest[] = [];
@@ -48,7 +50,10 @@ export async function bitbucketReviews(repo: BitbucketRepo): Promise<PullRequest
     try {
       res = await fetch(url, { headers: { Authorization: auth, Accept: "application/json" } });
     } catch (err) {
-      throw new Fail(`Can't reach ${repo.baseUrl}: ${causeOf(err)}`);
+      let why = causeOf(err);
+      if (proxy?.used) why += ` (through the proxy ${proxy.shown})`;
+      if (proxy && !proxy.used) why += `. git uses the proxy ${proxy.shown}, but this Node version can't; update Node`;
+      throw new Fail(`Can't reach ${repo.baseUrl}: ${why}`);
     }
     if (res.status === 401 || res.status === 403) {
       throw new Fail(`Bitbucket didn't accept the login git stored for ${repo.host} (${res.status}).`);
@@ -103,6 +108,29 @@ function storedLogin(protocol: string, host: string): { username: string; passwo
     throw new Fail(`git has no login stored for ${host}. Run git fetch once and log in, then try again.`);
   }
   return { username: fields.username, password: fields.password };
+}
+
+// The proxy git uses for the server: its http.proxy setting, or else the
+// HTTPS_PROXY (or HTTP_PROXY) variable, with NO_PROXY. Node's fetch ignores
+// all of them unless told.
+function useGitsProxy(baseUrl: string): { shown: string; used: boolean } | undefined {
+  const env = process.env;
+  let proxy: string | undefined;
+  try {
+    proxy = git(["config", "--get-urlmatch", "http.proxy", baseUrl]);
+  } catch {
+    // Not set in git; fall back to the environment, like git does.
+  }
+  proxy ||= baseUrl.startsWith("https:") ? (env.https_proxy ?? env.HTTPS_PROXY) : (env.http_proxy ?? env.HTTP_PROXY);
+  if (!proxy) return undefined;
+  if (!/^[a-z]+:\/\//i.test(proxy)) proxy = `http://${proxy}`; // git allows host:port
+  const shown = proxy.replace(/\/\/[^@/]+@/, "//"); // without a password
+
+  const h = http as typeof http & { setGlobalProxyFromEnv?: (env: Record<string, string>) => unknown };
+  if (!h.setGlobalProxyFromEnv) return { shown, used: false }; // older Node
+  const noProxy = env.no_proxy ?? env.NO_PROXY;
+  h.setGlobalProxyFromEnv({ http_proxy: proxy, https_proxy: proxy, ...(noProxy ? { no_proxy: noProxy } : {}) });
+  return { shown, used: true };
 }
 
 // Company networks often inspect HTTPS with their own certificate, which the
