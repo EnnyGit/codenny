@@ -48,6 +48,18 @@ to match your machine:
 
 On Windows both `D:/code` and `/d/code` work.
 
+## Reviewing pull requests
+
+`ny review` lists the open pull requests waiting for your review and opens the
+one you pick in a separate folder, with its changes as uncommitted changes in
+your IDE. It works out where the repo lives from its `origin`:
+
+- **Bitbucket Data Center**, cloned over HTTPS: uses the login git already
+  stored for the server, so there's nothing to set up.
+- **GitHub**: uses [gh](https://cli.github.com) (`gh auth login` once).
+
+Anything else, or `ny review --branches`: pick any branch instead.
+
 ## Your own scripts
 
 Put `name.sh` in your `scriptsDir` and run it as `ny name`. The first comment

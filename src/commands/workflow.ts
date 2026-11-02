@@ -15,12 +15,13 @@ ${bold("Working on something")}
   ${cmd("ny b")}            hop between your branches; push 2 means unpushed work
 
 ${bold("Reviewing a pull request")}
-  ${cmd("ny r")}            pick the branch; it opens in its own IDE window with the
-                  pull request's changes as uncommitted changes, and you can
-                  run its tests there. Your own folder stays as it is.
+  ${cmd("ny r")}            pick from the pull requests waiting for your review; it
+                  opens in its own IDE window with its changes as uncommitted
+                  changes, and you can run its tests there. Your own folder
+                  stays as it is. ${dim("ny r --branches picks any branch instead")}
                   ${dim("Commit window: the changed files. Editor gutter: the changed lines.")}
                   ${dim("Tip: make a changelist \"Reviewed\" and move files there (F6) as you go")}
-  ${cmd("ny r")}            next review, or the same branch again for new commits
+  ${cmd("ny r")}            next review, or the same one again for its new commits
   ${cmd("ny r --done")}     remove the review folder when you're done for a while
 
 ${bold("After pull requests are merged")}

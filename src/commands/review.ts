@@ -3,6 +3,7 @@ import { basename, dirname, join } from "node:path";
 import { pickBranch } from "../branches.js";
 import type { Command } from "../command.js";
 import { openInIde } from "../ide.js";
+import { originHost, pickPullRequest, pullRequestCommit } from "../pullRequests.js";
 import { confirm, Fail, git, gitLoud, gitOk, mainBranch } from "../run.js";
 
 // The pull request commit the review folder was set up from, to tell the
@@ -14,20 +15,23 @@ export const review: Command = {
   aliases: ["r"],
   summary: "review a pull request in its own folder and IDE window",
   help: `ny review [filter]
+ny review --branches [filter]
 ny review --done
 
-Pick the branch, and it opens in <reviewDir>/<project> in its own IDE window,
-with the pull request's changes as uncommitted local changes: the Commit
+Lists the open pull requests waiting for your review (Bitbucket Data Center,
+or GitHub through gh), and opens the one you pick in <reviewDir>/<project> in
+its own IDE window, with its changes as uncommitted local changes: the Commit
 window lists the files it touched and the editor marks every changed line.
 The files are the pull request's code, so you can run it and its tests there.
 Your own folder and its changes stay exactly as they are.
-The changes are the pull request's own, counted from where it split off main,
-like Bitbucket and GitHub show them, even when the branch is behind main.
+The changes are the pull request's own, counted from where it split off the
+branch it goes into, like Bitbucket and GitHub show them.
 The first time per project it creates the folder (install dependencies there
-once); after that it reuses it. Run it again on the same branch to pick up new
-commits. If you edited files in the review folder, it asks before throwing
+once); after that it reuses it. Pick the same pull request again to get its
+new commits. If you edited files in the review folder, it asks before throwing
 them away.
-  --done   remove this project's review folder`,
+  --branches  pick any branch instead of a pull request
+  --done      remove this project's review folder`,
   async run(args, config) {
     let common: string;
     try {
@@ -46,8 +50,28 @@ them away.
       return console.log(`Removed ${dir}`);
     }
 
-    const picked = pickBranch(args[0]);
-    if (!picked) return;
+    const query = args.find((a) => !a.startsWith("--"));
+    const host = args.includes("--branches") ? undefined : originHost();
+    let label: string, target: string, into: string;
+    if (host) {
+      const pr = await pickPullRequest(host, query);
+      if (pr === null) return console.log("No open pull requests waiting for your review. ny review --branches picks any branch.");
+      if (!pr) return;
+      target = pullRequestCommit(pr);
+      into = gitOk(["rev-parse", "--verify", "--quiet", `refs/remotes/origin/${pr.target}`])
+        ? `origin/${pr.target}`
+        : mainBranch();
+      label = `#${pr.id} ${pr.title} (${pr.source} → ${pr.target})`;
+    } else {
+      const picked = pickBranch(query);
+      if (!picked) return;
+      // Prefer the server's version; fall back to a local-only branch.
+      target = gitOk(["rev-parse", "--verify", "--quiet", `refs/remotes/origin/${picked}`])
+        ? `origin/${picked}`
+        : picked;
+      into = mainBranch();
+      label = picked;
+    }
 
     let created = false;
     if (!existsSync(dir)) {
@@ -60,29 +84,26 @@ them away.
       gitLoud(["-C", dir, "clean", "-fd", "--quiet"]);
     }
 
-    // Prefer the server's version; fall back to a local-only branch.
-    const target = gitOk(["rev-parse", "--verify", "--quiet", `refs/remotes/origin/${picked}`])
-      ? `origin/${picked}`
-      : picked;
     gitLoud(["-C", dir, "switch", "--quiet", "--detach", target]);
     git(["update-ref", reviewRef, git(["rev-parse", target])]);
     gitOk(["branch", "--delete", "--force", "review-base"]); // from older versions
 
-    // Step back to where the pull request split off main, keeping its files:
+    // Step back to where the pull request split off, keeping its files:
     // everything it changed is now an uncommitted change.
     let base: string | undefined;
     try {
-      base = git(["merge-base", mainBranch(), target]);
+      base = git(["merge-base", into, target]);
     } catch {
-      // No common history with main.
+      // No common history.
     }
-    console.log(`Reviewing ${picked} in ${dir}`);
+    console.log(`Reviewing ${label}`);
+    console.log(`in ${dir}`);
     if (base) {
       gitLoud(["-C", dir, "reset", "--soft", "--quiet", base]);
       const stat = git(["-C", dir, "diff", "--cached", "--shortstat"]);
-      console.log(stat ? `${stat}, shown as uncommitted changes in the IDE's Commit window.` : "No changes compared to main.");
+      console.log(stat ? `${stat}, shown as uncommitted changes in the IDE's Commit window.` : `No changes compared to ${into}.`);
     } else {
-      console.log(`Can't find where ${picked} split off ${mainBranch()}, so its changes aren't shown as local changes.`);
+      console.log(`Can't find where it split off ${into}, so its changes aren't shown as local changes.`);
     }
     if (created) console.log(`New review folder: install dependencies there once (for example: cd ${dir} && npm install).`);
 
