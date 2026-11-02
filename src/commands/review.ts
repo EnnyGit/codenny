@@ -34,7 +34,8 @@ once); after that it reuses it. Pick the same pull request again to get its
 new commits. If you edited files in the review folder, it asks before throwing
 them away.
   --branches  pick any branch instead of a pull request
-  --done      remove this project's review folder`,
+  --done      remove this project's review folder (only that one; asks first
+              if you edited files there)`,
   async run(args, config) {
     let common: string;
     try {
