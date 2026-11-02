@@ -60,6 +60,18 @@ your IDE. It works out where the repo lives from its `origin`:
 
 Anything else, or `ny review --branches`: pick any branch instead.
 
+The review folder, `<reviewDir>/<project>`, is a
+[git worktree](https://git-scm.com/docs/git-worktree) of your project:
+
+- It shares your project's `.git`, so it's not a second clone. A fetch in one
+  is visible in the other.
+- It has its own files, so your own folder and changes stay as they are while
+  you review.
+- It isn't on a branch itself (detached HEAD), so you can still switch to the
+  pull request's branch in your own folder.
+- There's one per project, reused for every review, so you only install
+  dependencies once. `git worktree list` shows it; `ny review --done` removes it.
+
 ## Your own scripts
 
 Put `name.sh` in your `scriptsDir` and run it as `ny name`. The first comment

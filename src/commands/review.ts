@@ -26,6 +26,9 @@ The files are the pull request's code, so you can run it and its tests there.
 Your own folder and its changes stay exactly as they are.
 The changes are the pull request's own, counted from where it split off the
 branch it goes into, like Bitbucket and GitHub show them.
+The folder is a git worktree: it shares your project's .git (no second clone)
+but has its own files, and isn't on a branch itself, so your own folder can
+still switch to the pull request's branch.
 The first time per project it creates the folder (install dependencies there
 once); after that it reuses it. Pick the same pull request again to get its
 new commits. If you edited files in the review folder, it asks before throwing
