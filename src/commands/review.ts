@@ -18,21 +18,31 @@ export const review: Command = {
 ny review --branches [filter]
 ny review --done
 
-Lists the open pull requests waiting for your review (Bitbucket Data Center,
-or GitHub through gh), and opens the one you pick in <reviewDir>/<project> in
-its own IDE window, with its changes as uncommitted local changes: the Commit
-window lists the files it touched and the editor marks every changed line.
-The files are the pull request's code, so you can run it and its tests there.
-Your own folder and its changes stay exactly as they are.
+Lists the open pull requests waiting for your review and opens the one you
+pick in its own IDE window, with its changes as uncommitted local changes:
+the Commit window lists the files it touched and the editor marks every
+changed line. The files are the pull request's code, so you can run it and its
+tests there. Your own folder and its changes stay exactly as they are.
 The changes are the pull request's own, counted from where it split off the
-branch it goes into, like Bitbucket and GitHub show them.
-The folder is a git worktree: it shares your project's .git (no second clone)
-but has its own files, and isn't on a branch itself, so your own folder can
-still switch to the pull request's branch.
-The first time per project it creates the folder (install dependencies there
-once); after that it reuses it. Pick the same pull request again to get its
-new commits. If you edited files in the review folder, it asks before throwing
-them away.
+branch it goes into, like Bitbucket and GitHub show them. Pick the same pull
+request again to get its new commits.
+
+Where the pull requests come from, going by origin:
+  Bitbucket Data Center  cloned over HTTPS; uses the login git already stored
+                         for the server, nothing to set up
+  GitHub                 through gh (gh auth login once)
+  anything else          the branch list, like --branches
+
+The review folder, <reviewDir>/<project>, is a git worktree of your project:
+  - it shares your project's .git, so it's no second clone, and a fetch in one
+    is visible in the other
+  - it has its own files, so your own folder and changes stay as they are
+  - it isn't on a branch itself, so your own folder can still switch to the
+    pull request's branch
+  - there's one per project, reused for every review, so you install
+    dependencies there once; git worktree list shows it
+If you edited files in the review folder, it asks before throwing them away.
+
   --branches  pick any branch instead of a pull request
   --done      remove the review folder of the project you're in, asking first
               if you edited files there. Your own folder, branches, other

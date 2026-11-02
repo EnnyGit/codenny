@@ -16,7 +16,8 @@ ny <command> --help
 ## Install
 
 Needs Node 20+, git and [fzf](https://github.com/junegunn/fzf)
-(`brew install fzf` or `winget install junegunn.fzf`).
+(`brew install fzf` or `winget install junegunn.fzf`). For `ny review` on
+GitHub repos also [gh](https://cli.github.com), logged in with `gh auth login`.
 
 ```bash
 git clone https://github.com/EnnyGit/codenny.git
@@ -47,30 +48,6 @@ to match your machine:
 | `scriptsDir` | your own scripts |
 
 On Windows both `D:/code` and `/d/code` work.
-
-## Reviewing pull requests
-
-`ny review` lists the open pull requests waiting for your review and opens the
-one you pick in a separate folder, with its changes as uncommitted changes in
-your IDE. It works out where the repo lives from its `origin`:
-
-- **Bitbucket Data Center**, cloned over HTTPS: uses the login git already
-  stored for the server, so there's nothing to set up.
-- **GitHub**: uses [gh](https://cli.github.com) (`gh auth login` once).
-
-Anything else, or `ny review --branches`: pick any branch instead.
-
-The review folder, `<reviewDir>/<project>`, is a
-[git worktree](https://git-scm.com/docs/git-worktree) of your project:
-
-- It shares your project's `.git`, so it's not a second clone. A fetch in one
-  is visible in the other.
-- It has its own files, so your own folder and changes stay as they are while
-  you review.
-- It isn't on a branch itself (detached HEAD), so you can still switch to the
-  pull request's branch in your own folder.
-- There's one per project, reused for every review, so you only install
-  dependencies once. `git worktree list` shows it; `ny review --done` removes it.
 
 ## Your own scripts
 
