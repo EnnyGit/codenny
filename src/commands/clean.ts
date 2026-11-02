@@ -1,6 +1,5 @@
-import { createInterface } from "node:readline/promises";
 import type { Command } from "../command.js";
-import { Fail, git, gitLoud, gitOk, mainBranch, requireRepo } from "../run.js";
+import { confirm, Fail, git, gitLoud, gitOk, mainBranch, requireRepo } from "../run.js";
 
 export const clean: Command = {
   name: "clean",
@@ -41,10 +40,7 @@ is lost. Shows the list and asks first.`,
 
     console.log(`Fully merged into ${main} and deleted on the server:`);
     safe.forEach((b) => console.log(`  ${b}`));
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const answer = (await rl.question("Delete these local branches? [y/N] ")).trim();
-    rl.close();
-    if (!["y", "Y", "yes"].includes(answer)) return console.log("Nothing deleted.");
+    if (!(await confirm("Delete these local branches?"))) return console.log("Nothing deleted.");
 
     for (const b of safe) {
       if (gitOk(["branch", "-D", b])) console.log(`  deleted ${b}`);

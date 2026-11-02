@@ -1,6 +1,7 @@
 // Small wrappers around child processes, so commands read like the shell
 // scripts they replace.
 import { spawnSync } from "node:child_process";
+import { createInterface } from "node:readline/promises";
 
 export class Fail extends Error {}
 
@@ -40,4 +41,12 @@ export function mainBranch(): string {
 export function hasCommand(cmd: string): boolean {
   const finder = process.platform === "win32" ? "where" : "which";
   return spawnSync(finder, [cmd], { stdio: "ignore" }).status === 0;
+}
+
+// Asks a yes/no question; anything but y or yes is no.
+export async function confirm(question: string): Promise<boolean> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = (await rl.question(`${question} [y/N] `)).trim().toLowerCase();
+  rl.close();
+  return answer === "y" || answer === "yes";
 }

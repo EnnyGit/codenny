@@ -15,10 +15,12 @@ ${bold("Working on something")}
   ${cmd("ny b")}            hop between your branches; push 2 means unpushed work
 
 ${bold("Reviewing a pull request")}
-  ${cmd("ny r")}            pick the branch; it opens in its own IDE window,
-                  your own folder and changes stay as they are
-                  ${dim("in the IDE: branch popup > review-base > Show Diff with Working Tree")}
-  ${cmd("ny r")}            next review: same folder, just pick another branch
+  ${cmd("ny r")}            pick the branch; it opens in its own IDE window with the
+                  pull request's changes as uncommitted changes, and you can
+                  run its tests there. Your own folder stays as it is.
+                  ${dim("Commit window: the changed files. Editor gutter: the changed lines.")}
+                  ${dim("Tip: make a changelist \"Reviewed\" and move files there (F6) as you go")}
+  ${cmd("ny r")}            next review, or the same branch again for new commits
   ${cmd("ny r --done")}     remove the review folder when you're done for a while
 
 ${bold("After pull requests are merged")}
